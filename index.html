@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>EVETRADE</title>
+    <link rel="stylesheet" href="bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="bootstrap/css/bootstrap-theme.min.css">
+    <script src="bootstrap/js/jquery.min.js"></script>
+    <script src="bootstrap/js/bootstrap.min.js"></script>
+    <script src="bootstrap/js/bootstrap3-typeahead.min.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <div class="page-header">
+            <h1>EVEy Trades <small>beta</small></h1>
+        </div>
+        <div class="input-group">
+            <span class="input-group-addon">My current location</span>
+            <input id="input-station" type="text" class="form-control" placeholder="Station name" data-provide="typeahead">
+        </div>
+        <div class="input-group">
+            <span class="input-group-addon">I can hold</span>
+            <input id="input-cargo" type="text" class="form-control" placeholder="Cargo hold" value="5800">
+            <span class="input-group-addon">m³</span>
+        </div>
+        <div class="input-group">
+            <span class="input-group-addon">I only have</span>
+            <input id="input-isk" type="text" class="form-control" placeholder="Can buy for..." value="1000000">
+            <span class="input-group-addon">ISK</span>
+        </div>
+        <div class="input-group">
+            <span class="input-group-addon">A max of</span>
+            <input id="input-jumps" type="text" class="form-control" placeholder="Max jumps." value="2">
+            <span class="input-group-addon">Jumps</span>
+        </div>
+        <!--<div class="input-group">
+            <span class="input-group-addon">Security not lower than</span>
+            <input id="input-security" type="text" class="form-control" placeholder="Security Status" value="0.5">
+            <span class="input-group-addon">SEC</span>
+        </div>-->
+        <button id="button-search" type="button" class="btn btn-primary btn-block">Calculate my easy trade routes</button>
+        <div class="progress">
+            <div id="search-progress" class="progress-bar progress-bar-info" role="progressbar" aria-valuemin="0" aria-valuemax="100"
+                style="width: 100%;"></div>
+        </div>
+    </div>
+    <div id="results-container" class="container">
+        <!-- placeholder for the result tables -->
+    </div>
+    <script src="js/evetrade.js"></script>
+</body>
+
+</html>

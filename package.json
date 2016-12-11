@@ -1,0 +1,21 @@
+{
+  "name": "evetrade",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "browserify src/*.ts -p tsify -g [uglifyify --screw-ie8 --compress --mangle] -o js/evetrade.js",
+    "dev": "lite-server"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/js-yaml": "^3.5.28",
+    "browserify": "^13.1.1",
+    "js-yaml": "^3.7.0",
+    "lite-server": "^2.2.2",
+    "tsify": "^2.0.3",
+    "typescript": "^2.1.4",
+    "uglifyify": "^3.0.4"
+  }
+}
