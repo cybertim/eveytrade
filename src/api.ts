@@ -1,4 +1,5 @@
-import { IEVEConstellation, IEVEInventory, IEVEMarketType, IEVEOrder, IEVEOrders, IEVERegion, IEVESolarSystem, IEVEStargate, IEVEStation, IXhrResponse, Xhr } from './xhr';
+import { IEVEConstellation, IEVEInventory, IEVEMarketType, IEVEOrder, IEVEOrders, IEVERegion, IEVESolarSystem, IEVEStargate, IEVEStation } from './shared';
+import { Xhr } from './xhr';
 
 const BASE = 'https://crest-tq.eveonline.com/';
 

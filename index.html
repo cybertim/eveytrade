@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8" />
-    <title>EVETRADE</title>
+    <title>EVEy Trade</title>
     <link rel="stylesheet" href="bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" href="bootstrap/css/bootstrap-theme.min.css">
     <script src="bootstrap/js/jquery.min.js"></script>
@@ -14,7 +14,7 @@
 <body>
     <div class="container">
         <div class="page-header">
-            <h1>EVEy Trades <small>beta</small></h1>
+            <h1>EVEy Trade <small>beta</small></h1>
         </div>
         <div class="input-group">
             <span class="input-group-addon">My current location</span>
@@ -22,17 +22,17 @@
         </div>
         <div class="input-group">
             <span class="input-group-addon">I can hold</span>
-            <input id="input-cargo" type="text" class="form-control" placeholder="Cargo hold" value="5800">
+            <input id="input-cargo" type="number" class="form-control" placeholder="Cargo hold" value="5800">
             <span class="input-group-addon">m³</span>
         </div>
         <div class="input-group">
             <span class="input-group-addon">I only have</span>
-            <input id="input-isk" type="text" class="form-control" placeholder="Can buy for..." value="1000000">
+            <input id="input-isk" type="number" class="form-control" placeholder="Can buy for..." value="1000000">
             <span class="input-group-addon">ISK</span>
         </div>
         <div class="input-group">
             <span class="input-group-addon">A max of</span>
-            <input id="input-jumps" type="text" class="form-control" placeholder="Max jumps." value="2">
+            <input id="input-jumps" type="number" class="form-control" placeholder="Max jumps." value="2">
             <span class="input-group-addon">Jumps</span>
         </div>
         <!--<div class="input-group">
@@ -50,6 +50,12 @@
         <!-- placeholder for the result tables -->
     </div>
     <script src="js/evetrade.js"></script>
+    <nav class="navbar navbar-default navbar-fixed-bottom">
+        <div class="container-fluid">
+            <p class="navbar-text">developed by <a href="https://dskwrk.com">dskwrk</a></p>
+            <p class="navbar-text">comments, questions and discussions <a href="disqus.html">go here</a></p>
+        </div>
+    </nav>
 </body>
 
 </html>

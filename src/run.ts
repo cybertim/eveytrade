@@ -1,6 +1,8 @@
-import { IItem, IOIndex, IResult, YStation } from './shared';
+import { Yaml } from './xhr';
+import { IEVEInventory, IEVEOrder, IEVESolarSystem, IItem, IOIndex, IResult, YStation } from './shared';
 import { constellationInfo, inventoryInfo, marketOrders, regionByHref, solarSystemInfo, stargateInfo, typeInfo } from './api';
-import { IEVEInventory, IEVEMarketType, IEVEOrder, IEVESolarSystem, Yaml } from './xhr';
+
+const MAX_RESULTS = 5; // max results per station
 
 const buttonSearch = <HTMLButtonElement>document.getElementById('button-search');
 const inputStation = <HTMLInputElement>document.getElementById('input-station');
@@ -82,25 +84,31 @@ export class Results {
         stationData.forEach(_station => { if (result.stationID === _station.stationID) station = _station });
         head.textContent = station.stationName;
         panel.appendChild(head); // add header
-        result.items.forEach(_item => {
+        const sortedItems = result.items.sort((a, b) => { return (a.turnOver * a.profit) - (b.turnOver * b.profit) }).reverse();
+        for (let i = 0; i < sortedItems.length; i++) {
+            if (i >= MAX_RESULTS) break;
+            const _item = sortedItems[i];
             const row = document.createElement('tr');
             const img = document.createElement('img');
             img.src = 'http://imageserver.eveonline.com/Type/' + inventory[_item.inventoryIndex].id + '_32.png'
+            img.style.height = '16px';
+            img.style.width = '16px';
             this.addTableData(row, img);
-            this.addTableData(row, inventory[_item.inventoryIndex].name);
-            this.addTableData(row, 'M3 total ' + (_item.turnOver * inventory[_item.inventoryIndex].volume).toFixed(2));
-            this.addTableData(row, _item.forBuy + ' Supply, ' + _item.canSell + ' Demand');
-            this.addTableData(row, _item.buyPrice.toFixed(2) + ' ISK pp, ' + (_item.turnOver * _item.buyPrice).toFixed(2) + ' ISK max');
-            this.addTableData(row, _item.profit.toFixed(2) + ' ISK pp, ' + (_item.turnOver * _item.profit).toFixed(2) + ' ISK max');
+            this.addTableData(row, inventory[_item.inventoryIndex].name + ' (' + _item.forBuy + ')');
+            this.addTableData(row, 'Uses ' + (_item.turnOver * inventory[_item.inventoryIndex].volume).toFixed(2) + 'm³');
+            this.addTableData(row, 'Stock Costs ' + (_item.turnOver * _item.buyPrice).toFixed(2) + ' ISK (' + _item.buyPrice.toFixed(2) + ' ISK each)');
+            this.addTableData(row, 'Profit ' + (_item.turnOver * _item.profit).toFixed(2) + ' ISK (' + _item.profit.toFixed(2) + ' ISK each)');
+            this.addTableData(row, _item.capped, 'red');
             tbody.appendChild(row);
-        });
+        }
         table.appendChild(tbody);
         panel.appendChild(table);
         document.getElementById('results-container').appendChild(panel);
     }
 
-    private addTableData(row: HTMLTableRowElement, data: string | HTMLElement) {
+    private addTableData(row: HTMLTableRowElement, data: string | HTMLElement, color?: string) {
         const td = document.createElement('td');
+        if (color) td.style.color = color;
         if (data instanceof HTMLElement) td.appendChild(data);
         else td.textContent = data;
         row.appendChild(td);
@@ -118,10 +126,8 @@ async function recursiveOrderCollector(currentStationID: number, solarSystem: IE
             if (systemIndex.indexOf(system.id) === -1) {
                 systemIndex.push(system.id);
                 // new solar system - add it to the recursion of a jump
-                divProgress.textContent = 'Analyzing Jump through gate ' + stargate.name + ' to ' + system.name + ' [' + (totalJumps - jumps + 1) + '/' + totalJumps + ']';
+                divProgress.textContent = 'Analyzing Jump through gate ' + stargate.type.name + ' to ' + system.name + ' [' + (totalJumps - jumps + 1) + '/' + totalJumps + ']';
                 collection = collection.concat(await recursiveOrderCollector(currentStationID, system, systemIndex, orderIndex, jumps - 1));
-            } else {
-                console.log('stargate', stargate.name, 'goes to same system', system.name);
             }
         }
     }
@@ -136,7 +142,6 @@ async function recursiveOrderCollector(currentStationID: number, solarSystem: IE
         orders = await marketOrders(region.id, (c, t) => {
             divProgress.textContent = 'Indexing region ' + region.name + ' [' + c + '/' + t + ']';
         });
-        console.log('!orders found', orders.length, 'in', region.name);
         orderIndex.push({ regionID: region.id, orders: orders });
     }
     const stationsInSolar = stationData.filter(_station => {
@@ -178,7 +183,8 @@ async function doSearch(station: YStation) {
             for (let j = 0; j < orders.length; j++) {
                 const buyOrder = orders[j];
                 if (sellOrder.type === buyOrder.type && sellOrder.price < buyOrder.price) {
-                    let tmatch: number = -1; // type index number in cache
+                    // select and cache the inventory typeId
+                    let tmatch: number = -1;
                     for (let i = 0; i < inventory.length; i++) {
                         if (inventory[i].id === sellOrder.type) tmatch = i;
                     }
@@ -186,15 +192,33 @@ async function doSearch(station: YStation) {
                         tmatch = inventory.push(await inventoryInfo(sellOrder.type));
                         tmatch--;
                     }
-                    await results.add(buyOrder.stationID, {
-                        forBuy: sellOrder.volume,
-                        canSell: buyOrder.volume,
-                        turnOver: (buyOrder.volume - sellOrder.volume < 0) ? buyOrder.volume : sellOrder.volume,
-                        buyPrice: sellOrder.price,
-                        sellPrice: buyOrder.price,
-                        profit: (buyOrder.price - sellOrder.price),
-                        inventoryIndex: tmatch
-                    });
+                    // calculate the maxium turnOver based on the filter (isk and cargo space)
+                    let capped = '';
+                    let cargoSpace = Number.parseInt(inputCargo.value);
+                    let iskAtHand = Number.parseInt(inputISK.value);
+                    let turnOver = (buyOrder.volume - sellOrder.volume < 0) ? buyOrder.volume : sellOrder.volume;
+                    if ((turnOver * inventory[tmatch].volume) > cargoSpace) {
+                        turnOver = cargoSpace / inventory[tmatch].volume;
+                        capped = 'cargo space'
+                    }
+                    if ((turnOver * sellOrder.price) > iskAtHand) {
+                        turnOver = iskAtHand / sellOrder.price;
+                        capped = 'isk at hand'
+                    }
+                    turnOver = Math.floor(turnOver);
+                    // add (if there is a turnover possible) item to results
+                    if (turnOver > 0) {
+                        await results.add(buyOrder.stationID, {
+                            forBuy: sellOrder.volume,
+                            canSell: buyOrder.volume,
+                            turnOver: turnOver,
+                            buyPrice: sellOrder.price,
+                            sellPrice: buyOrder.price,
+                            profit: (buyOrder.price - sellOrder.price),
+                            inventoryIndex: tmatch,
+                            capped: capped
+                        });
+                    }
                 }
             }
         }
