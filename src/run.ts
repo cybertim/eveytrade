@@ -94,7 +94,7 @@ export class Results {
             if (result.targetStationID === _station.stationID) targetStation = _station;
             if (result.sourceStationID === _station.stationID) sourceStation = _station;
         });
-        head.textContent = sourceStation.stationName + ' ' + sourceStation.security.toFixed(1) + ' ⇨ ' + targetStation.stationName + ' ' + targetStation.security.toFixed(1);
+        head.textContent = sourceStation.security.toFixed(1)  + '⊢ ' + sourceStation.stationName + ' ⋯⋯▶ ' + targetStation.stationName + ' ⊣' + targetStation.security.toFixed(1);
         panel.appendChild(head); // add header
         const sortedItems = result.items.sort((a, b) => { return a.profit - b.profit }).reverse();
         for (let i = 0; i < sortedItems.length; i++) {
@@ -106,10 +106,11 @@ export class Results {
             img.style.height = '16px';
             img.style.width = '16px';
             this.addTableData(row, img);
-            this.addTableData(row, inventory[_item.inventoryIndex].name + ' (x' + _item.forBuy + ' ' + _item.buyPrice.toFixed(2) + ' ISK)');
-            this.addTableData(row, 'Cargo ' + (_item.turnOver * inventory[_item.inventoryIndex].volume).toFixed(2) + 'm³ (' + _item.turnOver + 'x' + inventory[_item.inventoryIndex].volume + 'm³)');
-            this.addTableData(row, 'Costs ' + (_item.turnOver * _item.buyPrice).toFixed(2) + ' ISK');
-            this.addTableData(row, 'Profit ' + _item.profit.toFixed(2) + ' ISK [-2%]');
+            this.addTableData(row, inventory[_item.inventoryIndex].name);
+            this.addTableData(row, 'Amount ' + _item.turnOver);
+            this.addTableData(row, 'Cargo ' + (_item.turnOver * inventory[_item.inventoryIndex].volume).toFixed(2) + 'm³ ↹ ' + inventory[_item.inventoryIndex].volume + 'm³');
+            this.addTableData(row, 'Costs ' + (_item.turnOver * _item.buyPrice).toFixed(2) + ' ISK ↹ ' + _item.buyPrice.toFixed(2) + ' ISK');
+            this.addTableData(row, 'Profit ' + _item.profit.toFixed(2) + ' ISK (-2%) ↹ ' + (_item.sellPrice - _item.buyPrice).toFixed(2) + ' ISK');
             this.addTableData(row, _item.capped, 'red');
             tbody.appendChild(row);
         }
@@ -227,8 +228,8 @@ async function doSearch(station: YStation) {
                     }
                     turnOver = Math.floor(turnOver);
                     // add (if there is a turnover possible) item to results
-                    let profit = (turnOver * (buyOrder.price - sellOrder.price));
-                    profit = (profit - ((100 / profit) * 2));
+                    const z = (turnOver * (buyOrder.price - sellOrder.price));
+                    const profit = (z - ((100 / z) * 2));
                     if (turnOver > 0 && profit >= minProfit) {
                         await results.add(buyOrder.stationID, sellOrder.stationID, {
                             forBuy: sellOrder.volume,
