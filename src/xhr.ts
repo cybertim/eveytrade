@@ -9,7 +9,6 @@ export function Yaml<T>(location: string): Promise<T> {
         let req = new XMLHttpRequest();
         req.open('GET', location);
         req.timeout = TIMEOUT;
-        req.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
         req.onreadystatechange = () => {
             if (!req || req.readyState !== 4 || req.status === 0) return;
             try {
@@ -18,7 +17,7 @@ export function Yaml<T>(location: string): Promise<T> {
                 reject(e);
             }
         }
-        req.send({});
+        req.send();
     });
 }
 

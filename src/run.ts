@@ -21,7 +21,7 @@ let totalJumps: number;
 let stationData: YStation[] = null;
 
 async function initializeStationSearch() {
-    stationData = await Yaml<YStation[]>('data/staStations.yaml');
+    stationData = await Yaml<YStation[]>('https://gist.githubusercontent.com/cybertim/84737815c96e49c7f4509ba10d927dc4/raw/c48763ced6a1eb9b04eec49a4ee3aab5402215c9/staStations.yaml');
     let list = [];
     stationData.forEach(station => {
         list.push(station.stationName);

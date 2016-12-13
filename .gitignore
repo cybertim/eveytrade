@@ -3,3 +3,4 @@
 js/
 !bootstrap/js/
 node_modules/
+dist/

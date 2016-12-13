@@ -4,8 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "browserify src/*.ts -p tsify -g [uglifyify --screw-ie8 --compress --mangle] -o js/evetrade.js",
-    "dev": "lite-server"
+    "build": "mkdir -p ./js && browserify src/*.ts -p tsify -g [uglifyify --screw-ie8 --compress --mangle] -o js/evetrade.js",
+    "dev": "lite-server",
+    "dist": "npm run build && mkdir -p ./dist && cp -R {./bootstrap,./js,index.html,disqus.html} ./dist"
   },
   "author": "",
   "license": "ISC",
