@@ -8,7 +8,10 @@ const buttonSearch = <HTMLButtonElement>document.getElementById('button-search')
 const inputStation = <HTMLInputElement>document.getElementById('input-station');
 const inputCargo = <HTMLInputElement>document.getElementById('input-cargo');
 const inputISK = <HTMLInputElement>document.getElementById('input-isk');
+const inputProfit = <HTMLInputElement>document.getElementById('input-profit');
 const inputJumps = <HTMLInputElement>document.getElementById('input-jumps');
+const checkboxSolar = <HTMLInputElement>document.getElementById('solarsystem-checkbox');
+
 // const inputSecurity = <HTMLInputElement>document.getElementById('input-security');
 const divProgress = <HTMLDivElement>document.getElementById('search-progress');
 
@@ -45,17 +48,18 @@ export class Results {
         this._results = [];
     }
 
-    public async add(stationID: number, item: IItem) {
+    public async add(targetStationID: number, sourceStationID: number, item: IItem) {
         let match = false;
         this._results.forEach(_result => {
-            if (_result.stationID === stationID) {
+            if (_result.targetStationID === targetStationID && _result.sourceStationID === sourceStationID) {
                 _result.items.push(item);
                 match = true;
             }
         });
         if (!match) {
             this._results.push({
-                stationID: stationID,
+                targetStationID: targetStationID,
+                sourceStationID: sourceStationID,
                 items: [item]
             })
         }
@@ -67,12 +71,16 @@ export class Results {
     }
 
     public show() {
+        const resultDiv = document.getElementById('results-container');
+        for (let i = resultDiv.childNodes.length - 1; i >= 0; i--) {
+            resultDiv.removeChild(resultDiv.childNodes.item(i));
+        }
         this._results.forEach(_result => {
-            this.createPanel(_result);
+            this.createPanel(_result, resultDiv);
         });
     }
 
-    private createPanel(result: IResult) {
+    private createPanel(result: IResult, parent: HTMLElement) {
         const panel = document.createElement('div');
         const head = document.createElement('div');
         const table = document.createElement('table');
@@ -80,11 +88,15 @@ export class Results {
         table.className = "table table-hover";
         panel.className = "panel panel-default";
         head.className = "panel-heading";
-        let station: YStation = null;
-        stationData.forEach(_station => { if (result.stationID === _station.stationID) station = _station });
-        head.textContent = station.stationName;
+        let targetStation: YStation = null;
+        let sourceStation: YStation = null;
+        stationData.forEach(_station => {
+            if (result.targetStationID === _station.stationID) targetStation = _station;
+            if (result.sourceStationID === _station.stationID) sourceStation = _station;
+        });
+        head.textContent = sourceStation.stationName + ' ' + sourceStation.security.toFixed(1) + ' ⇨ ' + targetStation.stationName + ' ' + targetStation.security.toFixed(1);
         panel.appendChild(head); // add header
-        const sortedItems = result.items.sort((a, b) => { return (a.turnOver * a.profit) - (b.turnOver * b.profit) }).reverse();
+        const sortedItems = result.items.sort((a, b) => { return a.profit - b.profit }).reverse();
         for (let i = 0; i < sortedItems.length; i++) {
             if (i >= MAX_RESULTS) break;
             const _item = sortedItems[i];
@@ -94,16 +106,16 @@ export class Results {
             img.style.height = '16px';
             img.style.width = '16px';
             this.addTableData(row, img);
-            this.addTableData(row, inventory[_item.inventoryIndex].name + ' (' + _item.forBuy + ')');
-            this.addTableData(row, 'Uses ' + (_item.turnOver * inventory[_item.inventoryIndex].volume).toFixed(2) + 'm³');
-            this.addTableData(row, 'Stock Costs ' + (_item.turnOver * _item.buyPrice).toFixed(2) + ' ISK (' + _item.buyPrice.toFixed(2) + ' ISK each)');
-            this.addTableData(row, 'Profit ' + (_item.turnOver * _item.profit).toFixed(2) + ' ISK (' + _item.profit.toFixed(2) + ' ISK each)');
+            this.addTableData(row, inventory[_item.inventoryIndex].name + ' (x' + _item.forBuy + ' ' + _item.buyPrice.toFixed(2) + ' ISK)');
+            this.addTableData(row, 'Cargo ' + (_item.turnOver * inventory[_item.inventoryIndex].volume).toFixed(2) + 'm³ (' + _item.turnOver + 'x' + inventory[_item.inventoryIndex].volume + 'm³)');
+            this.addTableData(row, 'Costs ' + (_item.turnOver * _item.buyPrice).toFixed(2) + ' ISK');
+            this.addTableData(row, 'Profit ' + _item.profit.toFixed(2) + ' ISK [-2%]');
             this.addTableData(row, _item.capped, 'red');
             tbody.appendChild(row);
         }
         table.appendChild(tbody);
         panel.appendChild(table);
-        document.getElementById('results-container').appendChild(panel);
+        parent.appendChild(panel);
     }
 
     private addTableData(row: HTMLTableRowElement, data: string | HTMLElement, color?: string) {
@@ -144,14 +156,17 @@ async function recursiveOrderCollector(currentStationID: number, solarSystem: IE
         });
         orderIndex.push({ regionID: region.id, orders: orders });
     }
-    const stationsInSolar = stationData.filter(_station => {
-        return (_station.solarSystemID === solarSystem.id && _station.stationID !== currentStationID);
-    }).map(_station => { return _station.stationID });
+    const stationsInSolar = stationIDsInSolarSystem(solarSystem.id, currentStationID);
     // return filtered orders for solarsystem
-    collection = collection.concat(orders.filter(order => {
+    return collection.concat(orders.filter(order => {
         return (stationsInSolar.indexOf(order.stationID) > -1 && order.buy);
     }));
-    return collection;
+}
+
+function stationIDsInSolarSystem(solarSystemID: number, currentStationID: number) {
+    return stationData.filter(_station => {
+        return (_station.solarSystemID === solarSystemID && _station.stationID !== currentStationID);
+    }).map(_station => { return _station.stationID });
 }
 
 async function doSearch(station: YStation) {
@@ -161,7 +176,9 @@ async function doSearch(station: YStation) {
         divProgress.textContent = 'Initializing...';
         totalJumps = Number.parseInt(inputJumps.value);
         const results = new Results();
+        let wholeSolar = checkboxSolar.checked;
         let jumps = Number.parseInt(inputJumps.value);
+        let minProfit = Number.parseInt(inputProfit.value);
         let ioIndex: IOIndex[] = [];
         let isIndex: number[] = [];
         // getlocal soalrsystem (ignore current station - buy only) and all recursive jump orders
@@ -172,13 +189,16 @@ async function doSearch(station: YStation) {
         for (let i = 0; i < ioIndex.length; i++) {
             if (ioIndex[i].regionID === station.regionID) localOrders = ioIndex[i].orders;
         }
-        const stationSellOrders = localOrders.filter(_order => {
-            return (_order.stationID === station.stationID && !_order.buy);
+        const stationsInSolar = stationIDsInSolarSystem(station.solarSystemID, station.stationID);
+        const localSellOrders = localOrders.filter(_order => {
+            if (_order.stationID === station.stationID && !_order.buy) return true;
+            if (wholeSolar && stationsInSolar.indexOf(_order.stationID) > -1 && !_order.buy) return true;
+            return false;
         });
         // mix'n'match
-        for (let i = 0; i < stationSellOrders.length; i++) {
-            divProgress.textContent = 'Mix\'n\'Match [' + i + '/' + stationSellOrders.length + ']';
-            const sellOrder = stationSellOrders[i];
+        for (let i = 0; i < localSellOrders.length; i++) {
+            if (i % 500 === 0) divProgress.textContent = 'Mix\'n\'Match [' + i + '/' + localSellOrders.length + ']';
+            const sellOrder = localSellOrders[i];
             let type = null; // reset type resolve
             for (let j = 0; j < orders.length; j++) {
                 const buyOrder = orders[j];
@@ -207,14 +227,16 @@ async function doSearch(station: YStation) {
                     }
                     turnOver = Math.floor(turnOver);
                     // add (if there is a turnover possible) item to results
-                    if (turnOver > 0) {
-                        await results.add(buyOrder.stationID, {
+                    let profit = (turnOver * (buyOrder.price - sellOrder.price));
+                    profit = (profit - ((100 / profit) * 2));
+                    if (turnOver > 0 && profit >= minProfit) {
+                        await results.add(buyOrder.stationID, sellOrder.stationID, {
                             forBuy: sellOrder.volume,
                             canSell: buyOrder.volume,
                             turnOver: turnOver,
                             buyPrice: sellOrder.price,
                             sellPrice: buyOrder.price,
-                            profit: (buyOrder.price - sellOrder.price),
+                            profit: profit,
                             inventoryIndex: tmatch,
                             capped: capped
                         });
@@ -224,7 +246,7 @@ async function doSearch(station: YStation) {
         }
         results.show();
         divProgress.className = 'progress-bar progress-bar-success';
-        divProgress.textContent = 'Found ' + results.amount() + ' Results.';
+        divProgress.textContent = 'Found ' + results.amount() + ' Result(s)';
     } catch (e) {
         divProgress.className = 'progress-bar progress-bar-danger';
         divProgress.textContent = 'Failed: ' + e;

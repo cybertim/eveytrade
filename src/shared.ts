@@ -8,7 +8,7 @@ export interface IOIndex {
 }
 
 export interface IItem { inventoryIndex: number, capped: string, forBuy: number, canSell: number, turnOver: number, buyPrice: number, sellPrice: number, profit: number }
-export interface IResult { stationID: number; items: IItem[]; }
+export interface IResult { targetStationID: number, sourceStationID: number, items: IItem[] }
 
 // Xhr
 export interface IAPIRequest {

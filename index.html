@@ -9,6 +9,9 @@
     <script src="bootstrap/js/jquery.min.js"></script>
     <script src="bootstrap/js/bootstrap.min.js"></script>
     <script src="bootstrap/js/bootstrap3-typeahead.min.js"></script>
+    <style>
+        body { padding-bottom: 70px; }
+    </style>
 </head>
 
 <body>
@@ -17,30 +20,41 @@
             <h1>EVEy Trade <small>beta</small></h1>
         </div>
         <div class="input-group">
-            <span class="input-group-addon">My current location</span>
+            <span class="input-group-addon">My starting location is</span>
             <input id="input-station" type="text" class="form-control" placeholder="Station name" data-provide="typeahead">
+            <span class="input-group-addon">
+                <input id="solarsystem-checkbox" type="checkbox" checked> Include all Stations within the System
+            </span>
         </div>
         <div class="input-group">
-            <span class="input-group-addon">I can hold</span>
+            <span class="input-group-addon">My cargohold is</span>
             <input id="input-cargo" type="number" class="form-control" placeholder="Cargo hold" value="5800">
             <span class="input-group-addon">m³</span>
         </div>
         <div class="input-group">
-            <span class="input-group-addon">I only have</span>
+            <span class="input-group-addon">My budget is</span>
             <input id="input-isk" type="number" class="form-control" placeholder="Can buy for..." value="1000000">
             <span class="input-group-addon">ISK</span>
         </div>
         <div class="input-group">
-            <span class="input-group-addon">A max of</span>
+            <span class="input-group-addon">Find </span>
             <input id="input-jumps" type="number" class="form-control" placeholder="Max jumps." value="2">
-            <span class="input-group-addon">Jumps</span>
+            <span class="input-group-addon">Gate Jumps</span>
+        </div>
+        <div class="input-group">
+            <span class="input-group-addon">And a minimum profit of</span>
+            <input id="input-profit" type="number" class="form-control" placeholder="Minimum profit..." value="50000">
+            <span class="input-group-addon">ISK</span>
         </div>
         <!--<div class="input-group">
             <span class="input-group-addon">Security not lower than</span>
             <input id="input-security" type="text" class="form-control" placeholder="Security Status" value="0.5">
             <span class="input-group-addon">SEC</span>
         </div>-->
-        <button id="button-search" type="button" class="btn btn-primary btn-block">Calculate my easy trade routes</button>
+        <button id="button-search" data-toggle="tooltip" data-placement="top" title="everything is done locally from this browser: the speed depends on your internet, device speed and the API speed &amp; availability of CCP"
+            type="button" class="btn btn-primary btn-block">
+            Start Local Calculations
+        </button>
         <div class="progress">
             <div id="search-progress" class="progress-bar progress-bar-info" role="progressbar" aria-valuemin="0" aria-valuemax="100"
                 style="width: 100%;"></div>
@@ -49,6 +63,9 @@
     <div id="results-container" class="container">
         <!-- placeholder for the result tables -->
     </div>
+    <script>
+        $(function () { $('[data-toggle="tooltip"]').tooltip() })
+    </script>
     <script src="js/evetrade.js"></script>
     <nav class="navbar navbar-default navbar-fixed-bottom">
         <div class="container-fluid">

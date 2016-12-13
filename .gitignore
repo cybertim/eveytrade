@@ -1,4 +1,5 @@
 .DS_Store
 .vscode/
 js/
+!bootstrap/js/
 node_modules/
